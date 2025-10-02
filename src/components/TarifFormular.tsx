@@ -6,13 +6,15 @@ interface TarifFormularProps {
   onTarifAktualisieren?: (id: string, tarif: Partial<Stromtarif>) => void;
   bearbeitungsTarif?: Stromtarif | null;
   onBearbeitungAbbrechen?: () => void;
+  onAbbrechen?: () => void;
 }
 
 export const TarifFormular = ({ 
   onTarifHinzufuegen, 
   onTarifAktualisieren,
   bearbeitungsTarif,
-  onBearbeitungAbbrechen 
+  onBearbeitungAbbrechen,
+  onAbbrechen
 }: TarifFormularProps) => {
   const [formData, setFormData] = useState({
     name: '',

@@ -2,124 +2,100 @@ import { useState } from 'react';
 import { TarifFormular } from './components/TarifFormular';
 import { TarifListe } from './components/TarifListe';
 import { TarifVergleichChart } from './components/TarifVergleichChart';
-import { AuthForm } from './components/AuthForm';
-import { UserProfile } from './components/UserProfile';
+import { ConfigManager } from './components/ConfigManager';
 import { useStromtarife } from './hooks/useStromtarife';
-import { useAuth } from './hooks/useAuth';
 import type { Stromtarif } from './types';
 import './App.css';
 
 function App() {
-  const { user, isAuthenticated, isLoading, login, register, logout, deleteAccount } = useAuth();
-  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen } = useStromtarife(user?.id);
-  const [activeTab, setActiveTab] = useState<'eingabe' | 'liste' | 'vergleich' | 'profil'>('eingabe');
+  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen, exportTarife, importTarife } = useStromtarife();
+  const [activeTab, setActiveTab] = useState<'eingabe' | 'liste' | 'vergleich' | 'config'>('eingabe');
   const [beispielVerbrauch, setBeispielVerbrauch] = useState(3500);
   const [bearbeitungsTarif, setBearbeitungsTarif] = useState<Stromtarif | null>(null);
 
-  // Zeige Ladebildschirm während der Authentifizierung geprüft wird
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative inline-block mb-4">
-            <span className="text-6xl">⚡</span>
-          </div>
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Zeige Anmeldeformular wenn nicht authentifiziert
-  if (!isAuthenticated || !user) {
-    return <AuthForm onLogin={login} onRegister={register} />;
-  }
-
   const tabs = [
-    { id: 'eingabe', label: bearbeitungsTarif ? 'Tarif bearbeiten' : 'Tarif hinzufügen', icon: '⚡', gradient: 'from-blue-500 to-cyan-500' },
-    { id: 'liste', label: 'Meine Tarife', icon: '📊', gradient: 'from-purple-500 to-pink-500' },
-    { id: 'vergleich', label: 'Vergleichsdiagramm', icon: '📈', gradient: 'from-green-500 to-emerald-500' },
-    { id: 'profil', label: 'Profil', icon: '👤', gradient: 'from-orange-500 to-red-500' },
-  ] as const;
+    { id: 'eingabe' as const, label: bearbeitungsTarif ? 'Tarif bearbeiten' : 'Tarif hinzufügen', icon: '⚡', gradient: 'from-blue-500 to-cyan-500' },
+    { id: 'liste' as const, label: 'Meine Tarife', icon: '📊', gradient: 'from-purple-500 to-pink-500' },
+    { id: 'vergleich' as const, label: 'Vergleichsdiagramm', icon: '📈', gradient: 'from-green-500 to-emerald-500' },
+    { id: 'config' as const, label: 'Konfiguration', icon: '⚙️', gradient: 'from-orange-500 to-red-500' },
+  ];
 
   const handleTarifBearbeiten = (tarif: Stromtarif) => {
     setBearbeitungsTarif(tarif);
     setActiveTab('eingabe');
   };
 
+  const handleTarifSpeichern = (tarifDaten: Omit<Stromtarif, 'id'>) => {
+    if (bearbeitungsTarif) {
+      tarifAktualisieren(bearbeitungsTarif.id, tarifDaten);
+      setBearbeitungsTarif(null);
+    } else {
+      tarifHinzufuegen(tarifDaten);
+    }
+    setActiveTab('liste');
+  };
+
   const handleBearbeitungAbbrechen = () => {
     setBearbeitungsTarif(null);
+    setActiveTab('liste');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
-      {/* Animated background particles */}
+      {/* Animated background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-blue-500/5 to-transparent rounded-full animate-pulse-slow"></div>
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-purple-500/5 to-transparent rounded-full animate-pulse-slow delay-1000"></div>
       </div>
 
-      {/* Header */}
-      <header className="glass border-b border-slate-700/50 backdrop-blur-xl relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 animate-fadeInUp">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <span className="text-5xl">⚡</span>
+      <div className="relative z-10">
+        {/* Navigation */}
+        <nav className="border-b border-slate-700/50 backdrop-blur-xl bg-slate-900/80 sticky top-0 z-50">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-20">
+              {/* Logo */}
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-2xl">
+                  ⚡
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                    Stromtarif Vergleich
+                  </h1>
+                  <p className="text-sm text-slate-400">Intelligent. Einfach. Transparent.</p>
+                </div>
               </div>
 
-            </div>
-
-            {/* Tab Navigation */}
-            <nav className="flex gap-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    group relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105
-                    ${activeTab === tab.id 
-                      ? `bg-gradient-to-r ${tab.gradient} shadow-lg shadow-blue-500/25 text-white` 
-                      : 'glass hover:bg-slate-700/50 text-slate-300 hover:text-white'
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl group-hover:animate-bounce">{tab.icon}</span>
-                  </div>
-                  {activeTab === tab.id && (
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-                  )}
-                </button>
-              ))}
-            </nav>
-
-            {/* User info in header */}
-            <div className="hidden lg:flex items-center gap-3 text-sm">
-              <span className="text-slate-400">Angemeldet als:</span>
-              <span className="text-slate-200 font-medium">{user.name}</span>
+              {/* Tab Navigation */}
+              <div className="flex space-x-2">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2 ${
+                      activeTab === tab.id
+                        ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg transform scale-105`
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <span className="text-xl">{tab.icon}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-        <div className="animate-fadeInUp delay-300">
-          {/* Tarif Eingabe */}
+        {/* Main Content */}
+        <main className="container mx-auto px-4 py-8">
           {activeTab === 'eingabe' && (
-            <div className="space-y-8">
-              <TarifFormular 
-                onTarifHinzufuegen={tarifHinzufuegen}
-                bearbeitungsTarif={bearbeitungsTarif}
-                onTarifAktualisieren={tarifAktualisieren}
-                onBearbeitungAbbrechen={handleBearbeitungAbbrechen}
-              />
-            </div>
+            <TarifFormular
+              onTarifHinzufuegen={handleTarifSpeichern}
+              bearbeitungsTarif={bearbeitungsTarif}
+              onAbbrechen={handleBearbeitungAbbrechen}
+            />
           )}
 
-          {/* Tarif Liste */}
           {activeTab === 'liste' && (
             <div className="space-y-8">
               <TarifListe 
@@ -132,68 +108,21 @@ function App() {
             </div>
           )}
 
-          {/* Benutzer-Profil */}
-          {activeTab === 'profil' && (
-            <div className="space-y-8">
-              <UserProfile 
-                user={user}
-                onLogout={logout}
-                onDeleteAccount={deleteAccount}
-              />
-            </div>
-          )}
-
-          {/* Vergleichsdiagramm */}
           {activeTab === 'vergleich' && (
-            <div className="space-y-8">
-              {/* Verbrauchseingabe */}
-              <div className="glass p-6 rounded-2xl border border-slate-700/50">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-slate-100 mb-2">Verbrauchsanalyse</h3>
-                    <p className="text-slate-400">Geben Sie Ihren jährlichen Stromverbrauch ein für die Kostenberechnung</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label htmlFor="verbrauch" className="text-slate-300 font-medium whitespace-nowrap">
-                      Jahresverbrauch:
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="verbrauch"
-                        type="number"
-                        value={beispielVerbrauch}
-                        onChange={(e) => setBeispielVerbrauch(Number(e.target.value))}
-                        className="input-glow w-32 px-4 py-2 bg-slate-800/50 border border-slate-600 rounded-lg 
-                                 text-slate-100 text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 
-                                 transition-all duration-300"
-                        min="0"
-                        step="100"
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">
-                        kWh
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <TarifVergleichChart tarife={tarife} maxVerbrauch={beispielVerbrauch * 2} />
-            </div>
+            <TarifVergleichChart 
+              tarife={tarife}
+              maxVerbrauch={8000}
+            />
           )}
-        </div>
-      </main>
 
-      {/* Floating Action Button - Back to top */}
-      <button 
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-blue-500 to-cyan-500 
-                   rounded-full shadow-lg shadow-blue-500/25 text-white text-xl 
-                   hover:shadow-xl hover:shadow-blue-500/40 hover:scale-110 
-                   transition-all duration-300 z-20 animate-bounce-slow"
-        aria-label="Nach oben scrollen"
-      >
-        ↑
-      </button>
+          {activeTab === 'config' && (
+            <ConfigManager
+              onExport={exportTarife}
+              onImport={importTarife}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
