@@ -16,7 +16,6 @@ export const TarifFormular = ({
 }: TarifFormularProps) => {
   const [formData, setFormData] = useState({
     name: '',
-    anbieter: '',
     arbeitspreis: '',
     grundpreis: '',
     praemie: '',
@@ -32,7 +31,6 @@ export const TarifFormular = ({
     if (bearbeitungsTarif) {
       setFormData({
         name: bearbeitungsTarif.name,
-        anbieter: bearbeitungsTarif.anbieter,
         arbeitspreis: bearbeitungsTarif.arbeitspreis.toString(),
         grundpreis: bearbeitungsTarif.grundpreis.toString(),
         praemie: bearbeitungsTarif.praemie.toString(),
@@ -43,7 +41,6 @@ export const TarifFormular = ({
       // Formular zurücksetzen
       setFormData({
         name: '',
-        anbieter: '',
         arbeitspreis: '',
         grundpreis: '',
         praemie: '',
@@ -62,7 +59,7 @@ export const TarifFormular = ({
     
     const tarifDaten = {
       name: formData.name,
-      anbieter: formData.anbieter,
+      anbieter: 'Anbieter', // Standard-Anbieter, da nur der Name relevant ist
       arbeitspreis: parseFloat(formData.arbeitspreis),
       grundpreis: parseFloat(formData.grundpreis),
       praemie: parseFloat(formData.praemie) || 0,
@@ -83,7 +80,6 @@ export const TarifFormular = ({
     if (!istBearbeitungsModus) {
       setFormData({
         name: '',
-        anbieter: '',
         arbeitspreis: '',
         grundpreis: '',
         praemie: '',
@@ -138,21 +134,6 @@ export const TarifFormular = ({
             required
             className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-slate-700/50 hover:border-slate-500/50"
             placeholder="z.B. Ökostrom Plus"
-          />
-        </div>
-
-        <div className="group">
-          <label className="block text-sm font-medium text-slate-300 mb-2 group-focus-within:text-purple-400 transition-colors">
-            🏢 Anbieter *
-          </label>
-          <input
-            type="text"
-            name="anbieter"
-            value={formData.anbieter}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:bg-slate-700/50 hover:border-slate-500/50"
-            placeholder="z.B. Stadtwerke"
           />
         </div>
 

@@ -128,7 +128,7 @@ export const TarifListe: React.FC<TarifListeProps> = ({
                   <div className="flex items-center gap-3 mb-4">
                     <div className="relative">
                       <h4 className="font-bold text-slate-100 text-xl group-hover:text-white transition-colors">
-                        {tarif.anbieter}
+                        {tarif.name}
                       </h4>
                     </div>
                     {istGuenstigster && (
@@ -137,8 +137,6 @@ export const TarifListe: React.FC<TarifListeProps> = ({
                       </div>
                     )}
                   </div>
-                  
-                  <p className="text-slate-300 mb-4 text-lg">{tarif.name}</p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="glass rounded-lg p-3 border border-slate-600/30">

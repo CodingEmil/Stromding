@@ -57,12 +57,131 @@ interface TarifEmpfehlung {
   farbe: string;
 }
 
+interface OptimalerBereich {
+  tarifName: string;
+  bereich: string;
+  beschreibung: string;
+}
+
+// Funktion zur Berechnung der optimalen Verbrauchsbereiche
+const berechneOptimaleBereiche = (tarife: Stromtarif[], schnittpunkte: SchnittpunktInfo[], maxVerbrauch: number): OptimalerBereich[] => {
+  if (tarife.length === 0) return [];
+  
+  const bereiche: OptimalerBereich[] = [];
+  
+  // Erstelle Verbrauchspunkte basierend auf Schnittpunkten
+  const verbrauchspunkte = [0];
+  schnittpunkte.forEach(s => verbrauchspunkte.push(s.verbrauch));
+  verbrauchspunkte.push(maxVerbrauch);
+  verbrauchspunkte.sort((a, b) => a - b);
+  
+  // Entferne Duplikate
+  const einzigartigeVerbrauchspunkte = [...new Set(verbrauchspunkte)];
+  
+  let aktuellerTarif = '';
+  let bereichStart = 0;
+  
+  for (let i = 0; i < einzigartigeVerbrauchspunkte.length - 1; i++) {
+    const vonVerbrauch = einzigartigeVerbrauchspunkte[i];
+    const bisVerbrauch = einzigartigeVerbrauchspunkte[i + 1];
+    const testVerbrauch = vonVerbrauch + 100; // Teste etwas über dem Startpunkt
+    
+    // Finde günstigsten Tarif für diesen Punkt
+    let guenstigsterTarif = tarife[0];
+    let guenstigsteKosten = berechneTarifkosten(guenstigsterTarif, testVerbrauch);
+    
+    tarife.forEach(tarif => {
+      const kosten = berechneTarifkosten(tarif, testVerbrauch);
+      if (kosten < guenstigsteKosten) {
+        guenstigsteKosten = kosten;
+        guenstigsterTarif = tarif;
+      }
+    });
+    
+    const neuerTarifName = guenstigsterTarif.name;
+    
+    // Wenn sich der Tarif ändert, schließe den vorherigen Bereich ab
+    if (aktuellerTarif !== '' && aktuellerTarif !== neuerTarifName) {
+      bereiche.push({
+        tarifName: aktuellerTarif,
+        bereich: formatierBereich(bereichStart, vonVerbrauch, maxVerbrauch),
+        beschreibung: getBeschreibung(bereichStart, vonVerbrauch)
+      });
+      bereichStart = vonVerbrauch;
+    } else if (aktuellerTarif === '') {
+      bereichStart = vonVerbrauch;
+    }
+    
+    aktuellerTarif = neuerTarifName;
+    
+    // Letzter Bereich
+    if (i === einzigartigeVerbrauchspunkte.length - 2) {
+      bereiche.push({
+        tarifName: aktuellerTarif,
+        bereich: formatierBereich(bereichStart, bisVerbrauch, maxVerbrauch),
+        beschreibung: getBeschreibung(bereichStart, bisVerbrauch)
+      });
+    }
+  }
+  
+  return bereiche;
+};
+
+// Hilfsfunktionen
+const formatierBereich = (von: number, bis: number, maxVerbrauch: number): string => {
+  if (von === 0) {
+    return `bis ${bis.toLocaleString()} kWh/Jahr`;
+  } else if (bis >= maxVerbrauch) {
+    return `ab ${von.toLocaleString()} kWh/Jahr`;
+  } else {
+    return `${von.toLocaleString()} - ${bis.toLocaleString()} kWh/Jahr`;
+  }
+};
+
+const getBeschreibung = (von: number, bis: number): string => {
+  const mittlererVerbrauch = (von + bis) / 2;
+  if (mittlererVerbrauch < 2000) return "Niedrigverbraucher";
+  if (mittlererVerbrauch < 4500) return "Normalverbraucher";
+  return "Hochverbraucher";
+};
+
 export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
   tarife,
   maxVerbrauch: initialMaxVerbrauch = 8000
 }) => {
   const [maxVerbrauch, setMaxVerbrauch] = useState(initialMaxVerbrauch);
   const [schrittweite, setSchrittweite] = useState(250);
+  const [sichtbareTarife, setSichtbareTarife] = useState<Set<string>>(
+    new Set(tarife.map(t => t.id))
+  );
+
+  // Aktualisiere sichtbare Tarife wenn sich die Tarif-Liste ändert
+  React.useEffect(() => {
+    setSichtbareTarife(new Set(tarife.map(t => t.id)));
+  }, [tarife]);
+
+  // Toggle-Funktionen für Tarif-Sichtbarkeit
+  const toggleTarif = (tarifId: string) => {
+    setSichtbareTarife(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tarifId)) {
+        newSet.delete(tarifId);
+      } else {
+        newSet.add(tarifId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAlleTarife = () => {
+    if (sichtbareTarife.size === tarife.length) {
+      // Alle ausblenden
+      setSichtbareTarife(new Set());
+    } else {
+      // Alle einblenden
+      setSichtbareTarife(new Set(tarife.map(t => t.id)));
+    }
+  };
   // Berechne Schnittpunkte und Empfehlungen
   const { verbrauchspunkte, schnittpunkte, empfehlungen } = useMemo(() => {
     if (tarife.length === 0) return { verbrauchspunkte: [], schnittpunkte: [], empfehlungen: [] };
@@ -93,8 +212,8 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
           if (schnittpunkt > 0 && schnittpunkt <= maxVerbrauch) {
             schnittpunkte.push({
               verbrauch: Math.round(schnittpunkt),
-              tarif1: `${tarif1.anbieter} - ${tarif1.name}`,
-              tarif2: `${tarif2.anbieter} - ${tarif2.name}`,
+              tarif1: tarif1.name,
+              tarif2: tarif2.name,
               kosten: berechneTarifkosten(tarif1, schnittpunkt)
             });
           }
@@ -151,21 +270,26 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
     );
   }
 
-  // Erstelle Datasets für jeden Tarif
-  const datasets = tarife.map((tarif, index) => ({
-    label: `${tarif.anbieter} - ${tarif.name}`,
-    data: verbrauchspunkte.map(verbrauch => berechneTarifkosten(tarif, verbrauch)),
-    borderColor: FARBEN[index % FARBEN.length],
-    backgroundColor: FARBEN[index % FARBEN.length] + '20',
-    borderWidth: 3,
-    fill: false,
-    tension: 0.1,
-    pointRadius: 0,
-    pointHoverRadius: 6,
-    pointHoverBackgroundColor: FARBEN[index % FARBEN.length],
-    pointHoverBorderColor: '#1e293b',
-    pointHoverBorderWidth: 2,
-  }));
+  // Erstelle Datasets nur für sichtbare Tarife
+  const datasets = tarife
+    .filter(tarif => sichtbareTarife.has(tarif.id))
+    .map((tarif, index) => {
+      const originalIndex = tarife.indexOf(tarif);
+      return {
+        label: tarif.name,
+        data: verbrauchspunkte.map(verbrauch => berechneTarifkosten(tarif, verbrauch)),
+        borderColor: FARBEN[originalIndex % FARBEN.length],
+        backgroundColor: FARBEN[originalIndex % FARBEN.length] + '20',
+        borderWidth: 3,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: FARBEN[originalIndex % FARBEN.length],
+        pointHoverBorderColor: '#1e293b',
+        pointHoverBorderWidth: 2,
+      };
+    });
 
   const chartData = {
     labels: verbrauchspunkte.map(v => `${v}`),
@@ -321,6 +445,71 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
         </div>
       </div>
 
+      {/* Tarif-Auswahl */}
+      <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">👁️</span>
+            <h3 className="text-xl font-semibold text-slate-100">Tarife im Diagramm</h3>
+          </div>
+          <button
+            onClick={toggleAlleTarife}
+            className="px-4 py-2 glass border border-slate-600 rounded-lg text-slate-300 hover:text-slate-100 hover:border-slate-500 transition-all duration-300 text-sm font-medium"
+          >
+            {sichtbareTarife.size === tarife.length ? '🙈 Alle ausblenden' : '👁️ Alle anzeigen'}
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {tarife.map((tarif, index) => {
+            const isVisible = sichtbareTarife.has(tarif.id);
+            const farbe = FARBEN[index % FARBEN.length];
+            
+            return (
+              <label
+                key={tarif.id}
+                className={`
+                  flex items-center gap-3 p-3 rounded-lg border transition-all duration-300 cursor-pointer
+                  ${isVisible 
+                    ? 'border-slate-500/50 bg-slate-700/30 hover:bg-slate-700/50' 
+                    : 'border-slate-600/30 bg-slate-800/20 hover:bg-slate-700/30'
+                  }
+                `}
+              >
+                <input
+                  type="checkbox"
+                  checked={isVisible}
+                  onChange={() => toggleTarif(tarif.id)}
+                  className="w-4 h-4 rounded border-slate-500 bg-slate-700 text-blue-500 focus:ring-blue-500/20 focus:ring-2"
+                />
+                <div className="flex items-center gap-2 flex-1">
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: farbe }}
+                  ></div>
+                  <div className="min-w-0 flex-1">
+                    <div className={`font-medium text-sm transition-colors ${isVisible ? 'text-slate-100' : 'text-slate-400'}`}>
+                      {tarif.name}
+                    </div>
+                  </div>
+                </div>
+                <div className={`text-xs transition-colors ${isVisible ? 'text-slate-300' : 'text-slate-500'}`}>
+                  {isVisible ? '✅' : '⭕'}
+                </div>
+              </label>
+            );
+          })}
+        </div>
+        
+        <div className="mt-4 text-xs text-slate-500 flex items-center gap-2">
+          <span>💡</span>
+          <span>
+            Klicken Sie auf die Tarife um sie im Diagramm ein- oder auszublenden. 
+            Sichtbare Tarife: {sichtbareTarife.size} von {tarife.length}
+          </span>
+        </div>
+      </div>
+
       {/* Chart */}
       <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
         <div style={{ height: '500px' }}>
@@ -352,7 +541,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
                   </span>
                 </div>
                 <h4 className="font-semibold text-slate-100 text-lg mb-1">
-                  {empfehlung.tarif.anbieter}
+                  {empfehlung.tarif.name}
                 </h4>
                 <p className="text-slate-300 text-sm mb-3">{empfehlung.tarif.name}</p>
                 <div className="text-xs text-slate-400 space-y-1">
@@ -368,38 +557,37 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
         </div>
       )}
 
-      {/* Schnittpunkte */}
+      {/* Optimaler Verbrauchsbereich pro Tarif */}
       {schnittpunkte.length > 0 && (
         <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-2xl">📊</span>
-            <h3 className="text-xl font-semibold text-slate-100">Tarifwechsel-Punkte</h3>
-            <span className="text-sm text-slate-400">
-              (Verbrauchspunkte, bei denen sich die Kostenverhältnisse ändern)
-            </span>
+            <span className="text-2xl">🎯</span>
+            <h3 className="text-xl font-semibold text-slate-100">Wann lohnt sich welcher Tarif?</h3>
           </div>
           <div className="space-y-3">
-            {schnittpunkte.map((punkt, index) => (
+            {berechneOptimaleBereiche(tarife, schnittpunkte, maxVerbrauch).map((bereich, index) => (
               <div 
                 key={index}
                 className="glass rounded-lg p-4 border border-slate-600/30 hover:bg-slate-700/30 transition-all duration-300"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
-                    <span className="text-slate-200 font-medium">
-                      Bei {punkt.verbrauch.toLocaleString()} kWh/Jahr
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: FARBEN[index % FARBEN.length] }}
+                    ></div>
+                    <span className="text-slate-100 font-medium text-lg">
+                      {bereich.tarifName}
                     </span>
                   </div>
-                  <div className="text-slate-300 text-sm">
-                    Kosten: {punkt.kosten.toFixed(2)} €/Jahr
+                  <div className="text-right">
+                    <div className="text-slate-200 font-semibold">
+                      {bereich.bereich}
+                    </div>
+                    <div className="text-slate-400 text-sm">
+                      {bereich.beschreibung}
+                    </div>
                   </div>
-                </div>
-                <div className="mt-2 text-slate-400 text-sm">
-                  <span className="text-cyan-400">Ab diesem Verbrauch</span> wechselt das Kostenverhältnis zwischen:
-                </div>
-                <div className="mt-1 text-slate-300 text-sm font-medium">
-                  • {punkt.tarif1} ↔ {punkt.tarif2}
                 </div>
               </div>
             ))}
@@ -425,7 +613,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
                   className="w-4 h-4 rounded-full animate-pulse"
                   style={{ backgroundColor: FARBEN[index % FARBEN.length] }}
                 ></div>
-                <h4 className="font-semibold text-slate-100">{tarif.anbieter}</h4>
+                <h4 className="font-semibold text-slate-100">{tarif.name}</h4>
               </div>
               <p className="text-slate-300 mb-3 text-sm">{tarif.name}</p>
               <div className="space-y-2 text-xs">

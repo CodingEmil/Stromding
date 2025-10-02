@@ -12,10 +12,10 @@ Dies ist eine React TypeScript Website zum Vergleichen von Stromtarifen mit folg
 
 ## Hauptfunktionalitäten
 1. **Tarif-Eingabe**: Formulare zum Hinzufügen von Stromtarifen mit:
+   - Tarifname
    - Arbeitspreis (€/kWh)
    - Grundpreis (€/Monat)
    - Prämien/Boni (€)
-   - Tarifname und Anbieter
 
 2. **Tarif-Verwaltung**: 
    - Liste aller hinzugefügten Tarife
