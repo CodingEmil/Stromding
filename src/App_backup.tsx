@@ -7,7 +7,7 @@ import type { Stromtarif } from './types';
 import './App.css';
 
 function App() {
-  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen, alleTarifeLoeschen } = useStromtarife();
+  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen } = useStromtarife();
   const [activeTab, setActiveTab] = useState<'eingabe' | 'liste' | 'vergleich'>('eingabe');
   const [beispielVerbrauch, setBeispielVerbrauch] = useState(3500);
   const [bearbeitungsTarif, setBearbeitungsTarif] = useState<Stromtarif | null>(null);
@@ -102,7 +102,6 @@ function App() {
               <TarifListe 
                 tarife={tarife} 
                 onTarifLoeschen={tarifLoeschen} 
-                onAlleTarifeLoeschen={alleTarifeLoeschen}
                 onTarifBearbeiten={handleTarifBearbeiten}
               />
             </div>
