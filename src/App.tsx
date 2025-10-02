@@ -92,7 +92,7 @@ function App() {
             <TarifFormular
               onTarifHinzufuegen={handleTarifSpeichern}
               bearbeitungsTarif={bearbeitungsTarif}
-              onAbbrechen={handleBearbeitungAbbrechen}
+              onBearbeitungAbbrechen={handleBearbeitungAbbrechen}
             />
           )}
 
