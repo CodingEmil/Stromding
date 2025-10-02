@@ -25,6 +25,12 @@ config/api-keys.json
 *.secret
 *.key
 
+# Authentifizierungs-Daten (falls externe APIs verwendet werden)
+auth/
+.auth
+auth.json
+user-data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

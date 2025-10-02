@@ -2,20 +2,45 @@ import { useState } from 'react';
 import { TarifFormular } from './components/TarifFormular';
 import { TarifListe } from './components/TarifListe';
 import { TarifVergleichChart } from './components/TarifVergleichChart';
+import { AuthForm } from './components/AuthForm';
+import { UserProfile } from './components/UserProfile';
 import { useStromtarife } from './hooks/useStromtarife';
+import { useAuth } from './hooks/useAuth';
 import type { Stromtarif } from './types';
 import './App.css';
 
 function App() {
-  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen, alleTarifeLoeschen } = useStromtarife();
-  const [activeTab, setActiveTab] = useState<'eingabe' | 'liste' | 'vergleich'>('eingabe');
+  const { user, isAuthenticated, isLoading, login, register, logout, deleteAccount } = useAuth();
+  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen, alleTarifeLoeschen } = useStromtarife(user?.id);
+  const [activeTab, setActiveTab] = useState<'eingabe' | 'liste' | 'vergleich' | 'profil'>('eingabe');
   const [beispielVerbrauch, setBeispielVerbrauch] = useState(3500);
   const [bearbeitungsTarif, setBearbeitungsTarif] = useState<Stromtarif | null>(null);
+
+  // Zeige Ladebildschirm während der Authentifizierung geprüft wird
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative inline-block mb-4">
+            <span className="text-6xl animate-pulse-glow">⚡</span>
+            <div className="absolute inset-0 text-6xl animate-pulse-glow opacity-30 blur-sm">⚡</div>
+          </div>
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Zeige Anmeldeformular wenn nicht authentifiziert
+  if (!isAuthenticated || !user) {
+    return <AuthForm onLogin={login} onRegister={register} />;
+  }
 
   const tabs = [
     { id: 'eingabe', label: bearbeitungsTarif ? 'Tarif bearbeiten' : 'Tarif hinzufügen', icon: '⚡', gradient: 'from-blue-500 to-cyan-500' },
     { id: 'liste', label: 'Meine Tarife', icon: '📊', gradient: 'from-purple-500 to-pink-500' },
     { id: 'vergleich', label: 'Vergleichsdiagramm', icon: '📈', gradient: 'from-green-500 to-emerald-500' },
+    { id: 'profil', label: 'Profil', icon: '👤', gradient: 'from-orange-500 to-red-500' },
   ] as const;
 
   const handleTarifBearbeiten = (tarif: Stromtarif) => {
@@ -77,6 +102,12 @@ function App() {
                 </button>
               ))}
             </nav>
+
+            {/* User info in header */}
+            <div className="hidden lg:flex items-center gap-3 text-sm">
+              <span className="text-slate-400">Angemeldet als:</span>
+              <span className="text-slate-200 font-medium">{user.name}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -106,6 +137,17 @@ function App() {
                 onTarifBearbeiten={handleTarifBearbeiten}
                 beispielVerbrauch={beispielVerbrauch}
                 onVerbrauchChange={setBeispielVerbrauch}
+              />
+            </div>
+          )}
+
+          {/* Benutzer-Profil */}
+          {activeTab === 'profil' && (
+            <div className="space-y-8">
+              <UserProfile 
+                user={user}
+                onLogout={logout}
+                onDeleteAccount={deleteAccount}
               />
             </div>
           )}

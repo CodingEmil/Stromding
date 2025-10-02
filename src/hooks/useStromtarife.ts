@@ -1,49 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Stromtarif } from '../types';
+import { authService } from '../services/authService';
 
-const STORAGE_KEY = 'stromtarife';
-
-export const useStromtarife = () => {
+export const useStromtarife = (userId?: string) => {
   const [tarife, setTarife] = useState<Stromtarif[]>([]);
 
-  // Tarife aus localStorage laden
-  useEffect(() => {
-    const gespeicherteTarife = localStorage.getItem(STORAGE_KEY);
-    if (gespeicherteTarife) {
-      try {
-        setTarife(JSON.parse(gespeicherteTarife));
-      } catch (error) {
-        console.error('Fehler beim Laden der Tarife:', error);
-      }
+  // Lade Tarife für den aktuellen Benutzer
+  const loadTarife = useCallback(() => {
+    if (!userId) {
+      setTarife([]);
+      return;
     }
-  }, []);
 
-  // Tarife in localStorage speichern
+    const userData = authService.getUserData(userId);
+    setTarife(userData.tarife);
+  }, [userId]);
+
+  // Speichere Tarife für den aktuellen Benutzer
+  const saveTarife = useCallback((newTarife: Stromtarif[]) => {
+    if (!userId) return;
+
+    const userData = authService.getUserData(userId);
+    const updatedData = {
+      ...userData,
+      tarife: newTarife
+    };
+    authService.saveUserData(userId, updatedData);
+    setTarife(newTarife);
+  }, [userId]);
+
+  // Lade Tarife beim Start oder wenn sich der Benutzer ändert
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tarife));
-  }, [tarife]);
+    loadTarife();
+  }, [loadTarife]);
 
-  const tarifHinzufuegen = (neuerTarif: Omit<Stromtarif, 'id'>) => {
+  // Tarif hinzufügen
+  const tarifHinzufuegen = useCallback((neuerTarif: Omit<Stromtarif, 'id'>) => {
     const tarif: Stromtarif = {
       ...neuerTarif,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+      id: crypto.randomUUID(),
     };
-    setTarife(prev => [...prev, tarif]);
-  };
+    
+    const neueTarife = [...tarife, tarif];
+    saveTarife(neueTarife);
+  }, [tarife, saveTarife]);
 
-  const tarifAktualisieren = (id: string, aktualisierterTarif: Partial<Stromtarif>) => {
-    setTarife(prev => prev.map(tarif => 
+  // Tarif aktualisieren
+  const tarifAktualisieren = useCallback((id: string, aktualisierterTarif: Partial<Stromtarif>) => {
+    const neueTarife = tarife.map(tarif => 
       tarif.id === id ? { ...tarif, ...aktualisierterTarif } : tarif
-    ));
-  };
+    );
+    saveTarife(neueTarife);
+  }, [tarife, saveTarife]);
 
-  const tarifLoeschen = (id: string) => {
-    setTarife(prev => prev.filter(tarif => tarif.id !== id));
-  };
+  // Tarif löschen
+  const tarifLoeschen = useCallback((id: string) => {
+    const neueTarife = tarife.filter(tarif => tarif.id !== id);
+    saveTarife(neueTarife);
+  }, [tarife, saveTarife]);
 
-  const alleTarifeLoeschen = () => {
-    setTarife([]);
-  };
+  // Alle Tarife löschen
+  const alleTarifeLoeschen = useCallback(() => {
+    saveTarife([]);
+  }, [saveTarife]);
 
   return {
     tarife,
