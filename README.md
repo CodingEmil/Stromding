@@ -1,13 +1,13 @@
-# React + TypeScript + Vite
+# 🔌 StromTarif Vergleich
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Eine moderne React TypeScript Anwendung zum Vergleichen von Stromtarifen mit interaktiven Diagrammen und dunklem Design.
 
-Currently, two official plugins are available:
+## 🌟 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
+- ⚡ **Tarif-Eingabe**: Einfaches Hinzufügen von Stromtarifen mit Arbeitspreis, Grundpreis und Prämien
+- 📊 **Tarif-Verwaltung**: Bearbeiten, Löschen und Übersicht aller hinzugefügten Tarife
+- 📈 **Interaktives Diagramm**: Vergleich der Jahreskosten bei verschiedenen Verbrauchsmengen
+- 🎯 **Intelligente Empfehlungen**: Automatische Bestimmung des günstigsten Tarifs für verschiedene Verbrauchsbereiche
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 

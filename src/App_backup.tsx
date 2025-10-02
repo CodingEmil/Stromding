@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TarifFormular } from './components/TarifFormular';
 import { TarifListe } from './components/TarifListe';
-import { TarifVergleichChart } from './components/TarifVergleichChart2';
+import { TarifVergleichChart } from './components/TarifVergleichChart';
 import { useStromtarife } from './hooks/useStromtarife';
 import type { Stromtarif } from './types';
 import './App.css';
@@ -142,7 +142,7 @@ function App() {
                 </div>
               </div>
 
-              <TarifVergleichChart tarife={tarife} beispielVerbrauch={beispielVerbrauch} />
+              <TarifVergleichChart tarife={tarife} maxVerbrauch={beispielVerbrauch * 2} />
             </div>
           )}
         </div>
