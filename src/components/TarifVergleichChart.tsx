@@ -79,39 +79,56 @@ interface TarifOptimalitaet {
 
 // Funktion zur Berechnung wann sich welcher Tarif lohnt
 const berechneTarifOptimalitaet = (tarife: Stromtarif[], maxVerbrauch: number): TarifOptimalitaet[] => {
-  const schrittweite = 50; // Feine Auflösung für genaue Berechnung
+  const schrittweite = 10; // Sehr feine Auflösung für genaue Berechnung
   const optimalitatMappings: TarifOptimalitaet[] = [];
 
+  // Erstelle eine Liste aller Verbrauchspunkte mit dem jeweils günstigsten Tarif
+  const verbrauchspunkte: { verbrauch: number; guenstigsterTarif: Stromtarif }[] = [];
+  
+  for (let verbrauch = 0; verbrauch <= maxVerbrauch; verbrauch += schrittweite) {
+    let guenstigsterTarif = tarife[0];
+    let guenstigsteKosten = berechneTarifkosten(guenstigsterTarif, verbrauch);
+    
+    tarife.forEach(tarif => {
+      const kosten = berechneTarifkosten(tarif, verbrauch);
+      if (kosten < guenstigsteKosten || (kosten === guenstigsteKosten && tarif.id < guenstigsterTarif.id)) {
+        guenstigsteKosten = kosten;
+        guenstigsterTarif = tarif;
+      }
+    });
+    
+    verbrauchspunkte.push({ verbrauch, guenstigsterTarif });
+  }
+
+  // Für jeden Tarif bestimme die optimalen Bereiche
   tarife.forEach(tarif => {
-    let ersterOptimalerVerbrauch: number | null = null;
-    let letzterOptimalerVerbrauch: number | null = null;
-    let istJemalsOptimal = false;
+    const optimaleBereiche: { von: number; bis: number }[] = [];
+    let aktuellerBereichStart: number | null = null;
 
-    // Prüfe jeden Verbrauchspunkt
-    for (let verbrauch = 0; verbrauch <= maxVerbrauch; verbrauch += schrittweite) {
-      // Berechne Kosten für alle Tarife bei diesem Verbrauch
-      const kostenAktuell = berechneTarifkosten(tarif, verbrauch);
+    verbrauchspunkte.forEach((punkt, index) => {
+      const istOptimal = punkt.guenstigsterTarif.id === tarif.id;
       
-      // Prüfe ob dieser Tarif der günstigste ist
-      let istGuenstigster = true;
-      tarife.forEach(andereTarif => {
-        if (andereTarif.id !== tarif.id) {
-          const kostenAndere = berechneTarifkosten(andereTarif, verbrauch);
-          if (kostenAndere < kostenAktuell) {
-            istGuenstigster = false;
-          }
-        }
-      });
+      if (istOptimal && aktuellerBereichStart === null) {
+        // Neuer optimaler Bereich beginnt
+        aktuellerBereichStart = punkt.verbrauch;
+      } else if (!istOptimal && aktuellerBereichStart !== null) {
+        // Optimaler Bereich endet
+        const bereichEnde = index > 0 ? verbrauchspunkte[index - 1].verbrauch : punkt.verbrauch;
+        optimaleBereiche.push({ von: aktuellerBereichStart, bis: bereichEnde });
+        aktuellerBereichStart = null;
+      }
+    });
 
-      if (istGuenstigster && !istJemalsOptimal) {
-        ersterOptimalerVerbrauch = verbrauch;
-        istJemalsOptimal = true;
-      }
-      
-      if (istGuenstigster) {
-        letzterOptimalerVerbrauch = verbrauch;
-      }
+    // Falls der Bereich bis zum Ende geht
+    if (aktuellerBereichStart !== null) {
+      optimaleBereiche.push({ von: aktuellerBereichStart, bis: maxVerbrauch });
     }
+
+    // Bestimme den ersten und letzten optimalen Verbrauch
+    const ersterOptimalerVerbrauch = optimaleBereiche.length > 0 ? optimaleBereiche[0].von : null;
+    const letzterOptimalerVerbrauch = optimaleBereiche.length > 0 ? 
+      optimaleBereiche[optimaleBereiche.length - 1].bis : null;
+    const istJemalsOptimal = optimaleBereiche.length > 0;
 
     // Finde alternative Tarife für nicht-optimale Tarife
     const alternativen: string[] = [];

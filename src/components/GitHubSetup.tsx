@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { authService } from '../services/authService';
 import { githubDataService } from '../services/githubDataService';
 
 interface GitHubSetupProps {
@@ -24,8 +23,8 @@ export const GitHubSetup: React.FC<GitHubSetupProps> = ({ onComplete }) => {
       // Testen ob Token funktioniert
       await githubDataService.ensureDataBranch();
       
-      // GitHub-Modus aktivieren
-      authService.setGitHubMode(true, token);
+      // GitHub-Modus ist jetzt aktiv (Token wurde gesetzt)
+      console.log('GitHub-Modus aktiviert');
       
       setStep('success');
       setTimeout(() => {
@@ -39,8 +38,8 @@ export const GitHubSetup: React.FC<GitHubSetupProps> = ({ onComplete }) => {
   };
 
   const handleSkip = () => {
-    // Lokalen Modus verwenden
-    authService.setGitHubMode(false);
+    // Lokalen Modus verwenden (kein Token gesetzt)
+    console.log('Lokaler Modus aktiviert');
     onComplete();
   };
 
