@@ -52,10 +52,6 @@ export const useStromtarife = () => {
     setTarife(prev => prev.filter(tarif => tarif.id !== id));
   };
 
-  const alleTarifeLoeschen = () => {
-    setTarife([]);
-  };
-
   // Import/Export Funktionen
   const exportTarife = () => {
     const dataStr = JSON.stringify(tarife, null, 2);
@@ -106,7 +102,6 @@ export const useStromtarife = () => {
     tarifHinzufuegen,
     tarifAktualisieren,
     tarifLoeschen,
-    alleTarifeLoeschen,
     exportTarife,
     importTarife
   };

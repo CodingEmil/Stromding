@@ -3,14 +3,12 @@ import type { Stromtarif } from '../types';
 
 interface TarifFormularProps {
   onTarifHinzufuegen: (tarif: Omit<Stromtarif, 'id'>) => void;
-  onTarifAktualisieren?: (id: string, tarif: Partial<Stromtarif>) => void;
   bearbeitungsTarif?: Stromtarif | null;
   onBearbeitungAbbrechen?: () => void;
 }
 
 export const TarifFormular = ({ 
   onTarifHinzufuegen, 
-  onTarifAktualisieren,
   bearbeitungsTarif,
   onBearbeitungAbbrechen
 }: TarifFormularProps) => {
@@ -67,17 +65,14 @@ export const TarifFormular = ({
       preisgarantie: formData.preisgarantie ? parseInt(formData.preisgarantie) : undefined
     };
 
-    if (istBearbeitungsModus && bearbeitungsTarif && onTarifAktualisieren) {
-      // Tarif aktualisieren
-      onTarifAktualisieren(bearbeitungsTarif.id, tarifDaten);
+    // Tarif hinzufügen oder Änderung speichern
+    onTarifHinzufuegen(tarifDaten);
+    
+    // Bei Bearbeitung: Abbrechen-Callback aufrufen
+    if (istBearbeitungsModus) {
       onBearbeitungAbbrechen?.();
     } else {
-      // Neuen Tarif hinzufügen
-      onTarifHinzufuegen(tarifDaten);
-    }
-    
-    // Formular zurücksetzen nur wenn nicht im Bearbeitungsmodus
-    if (!istBearbeitungsModus) {
+      // Formular nur bei neuen Tarifen zurücksetzen
       setFormData({
         name: '',
         arbeitspreis: '',

@@ -5,7 +5,6 @@ import { TarifVergleichChart } from './components/TarifVergleichChart';
 import { ConfigManager } from './components/ConfigManager';
 import { useStromtarife } from './hooks/useStromtarife';
 import type { Stromtarif } from './types';
-import './App.css';
 
 function App() {
   const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen, exportTarife, importTarife } = useStromtarife();

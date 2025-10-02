@@ -1,0 +1,130 @@
+[
+  {
+    "id": "rheinenergie_grundversorgung",
+    "name": "RheinEnergie Grundversorgung (ET) 14a neu",
+    "anbieter": "RheinEnergie",
+    "arbeitspreis": 0.3390,
+    "grundpreis": 8.49,
+    "praemie": 0
+  },
+  {
+    "id": "ewe_gruenstrom_basis",
+    "name": "EWE Grünstrom basis",
+    "anbieter": "EWE Vertrieb",
+    "arbeitspreis": 0.2952,
+    "grundpreis": 25.02,
+    "praemie": 307
+  },
+  {
+    "id": "elektrizitaet_berlin_strom",
+    "name": "ELEKTRIZITÄT BERLIN Strom",
+    "anbieter": "Elektrizitätsversorgung Berlin",
+    "arbeitspreis": 0.2985,
+    "grundpreis": 13.99,
+    "praemie": 178
+  },
+  {
+    "id": "eswe_natur_strom",
+    "name": "ESWE Natur STROM",
+    "anbieter": "ESWE",
+    "arbeitspreis": 0.2925,
+    "grundpreis": 26.70,
+    "praemie": 315
+  },
+  {
+    "id": "stabistrom12",
+    "name": "Stabistrom12 12.2026",
+    "anbieter": "Energieversorgung Mittelrhein",
+    "arbeitspreis": 0.3095,
+    "grundpreis": 17.90,
+    "praemie": 244
+  },
+  {
+    "id": "eon_oekostrom_extra_12",
+    "name": "E.ON ÖkoStrom Extra 12",
+    "anbieter": "E.ON Energie",
+    "arbeitspreis": 0.2940,
+    "grundpreis": 25.47,
+    "praemie": 298
+  },
+  {
+    "id": "ewe_gruen_guenstig",
+    "name": "Grün & Günstig Strom",
+    "anbieter": "E WIE EINFACH",
+    "arbeitspreis": 0.2837,
+    "grundpreis": 25.40,
+    "praemie": 271
+  },
+  {
+    "id": "swa_strom_online_natur",
+    "name": "swa Strom Online natur",
+    "anbieter": "Stadtwerke Augsburg",
+    "arbeitspreis": 0.2839,
+    "grundpreis": 23.17,
+    "praemie": 226
+  },
+  {
+    "id": "plusstrom_gruenfair",
+    "name": "PlusStrom GRÜNFAIR",
+    "anbieter": "PlusStrom",
+    "arbeitspreis": 0.2772,
+    "grundpreis": 18.56,
+    "praemie": 154
+  },
+  {
+    "id": "vattenfall_oekostrom12",
+    "name": "ÖkoStrom12",
+    "anbieter": "Vattenfall Sales",
+    "arbeitspreis": 0.2930,
+    "grundpreis": 23.90,
+    "praemie": 251
+  },
+  {
+    "id": "goldstrom_natuerlich12",
+    "name": "natürlich12 Strom",
+    "anbieter": "goldstrom",
+    "arbeitspreis": 0.2785,
+    "grundpreis": 21.49,
+    "praemie": 188
+  },
+  {
+    "id": "lew_strom_fix_natur",
+    "name": "LEW Strom Fix Natur",
+    "anbieter": "Lechwerke",
+    "arbeitspreis": 0.3641,
+    "grundpreis": 15.90,
+    "praemie": 230
+  },
+  {
+    "id": "tchibo_energy_oekostrom12",
+    "name": "Tchibo Energy ÖkoStrom12",
+    "anbieter": "Tchibo Energy",
+    "arbeitspreis": 0.2960,
+    "grundpreis": 23.90,
+    "praemie": 251
+  },
+  {
+    "id": "mainova_strom_online_12",
+    "name": "Strom Online 12",
+    "anbieter": "Mainova",
+    "arbeitspreis": 0.2850,
+    "grundpreis": 21.19,
+    "praemie": 189
+  },
+  {
+    "id": "lichtblick_oekostrom_komfort_12",
+    "name": "ÖkoStrom Komfort 12",
+    "anbieter": "LichtBlick",
+    "arbeitspreis": 0.3000,
+    "grundpreis": 23.96,
+    "praemie": 252
+  },
+  {
+    "id": "gruenwelt_strom_bonus_12",
+    "name": "Strom Bonus 12",
+    "anbieter": "Grünwelt Wärmestrom",
+    "arbeitspreis": 0.3087,
+    "grundpreis": 24.62,
+    "praemie": 278
+  }
+]
