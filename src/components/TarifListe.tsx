@@ -5,7 +5,6 @@ import { berechneTarifkosten } from '../types';
 interface TarifListeProps {
   tarife: Stromtarif[];
   onTarifLoeschen: (id: string) => void;
-  onAlleTarifeLoeschen: () => void;
   onTarifBearbeiten?: (tarif: Stromtarif) => void;
   beispielVerbrauch?: number;
   onVerbrauchChange?: (verbrauch: number) => void;
@@ -14,7 +13,6 @@ interface TarifListeProps {
 export const TarifListe: React.FC<TarifListeProps> = ({
   tarife,
   onTarifLoeschen,
-  onAlleTarifeLoeschen,
   onTarifBearbeiten,
   beispielVerbrauch = 3500,
   onVerbrauchChange

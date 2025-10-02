@@ -138,6 +138,13 @@ export class AuthService {
       this.logout();
     }
   }
+
+  // GitHub-Modus setzen (Platzhalter-Implementierung)
+  setGitHubMode(enabled: boolean, token?: string): void {
+    // Hier könnte die GitHub-Integration implementiert werden
+    // Aktuell nur ein Platzhalter für zukünftige Funktionalität
+    console.log(`GitHub-Modus ${enabled ? 'aktiviert' : 'deaktiviert'}`, token ? 'mit Token' : 'ohne Token');
+  }
 }
 
 export const authService = new AuthService();

@@ -57,92 +57,121 @@ interface TarifEmpfehlung {
   farbe: string;
 }
 
-interface OptimalerBereich {
-  tarifName: string;
-  bereich: string;
-  beschreibung: string;
+interface TarifRanking {
+  tarif: Stromtarif;
+  rang: number;
+  kosten: number;
+  mehrkosten: number;
 }
 
-// Funktion zur Berechnung der optimalen Verbrauchsbereiche
-const berechneOptimaleBereiche = (tarife: Stromtarif[], schnittpunkte: SchnittpunktInfo[], maxVerbrauch: number): OptimalerBereich[] => {
-  if (tarife.length === 0) return [];
-  
-  const bereiche: OptimalerBereich[] = [];
-  
-  // Erstelle Verbrauchspunkte basierend auf Schnittpunkten
-  const verbrauchspunkte = [0];
-  schnittpunkte.forEach(s => verbrauchspunkte.push(s.verbrauch));
-  verbrauchspunkte.push(maxVerbrauch);
-  verbrauchspunkte.sort((a, b) => a - b);
-  
-  // Entferne Duplikate
-  const einzigartigeVerbrauchspunkte = [...new Set(verbrauchspunkte)];
-  
-  let aktuellerTarif = '';
-  let bereichStart = 0;
-  
-  for (let i = 0; i < einzigartigeVerbrauchspunkte.length - 1; i++) {
-    const vonVerbrauch = einzigartigeVerbrauchspunkte[i];
-    const bisVerbrauch = einzigartigeVerbrauchspunkte[i + 1];
-    const testVerbrauch = vonVerbrauch + 100; // Teste etwas über dem Startpunkt
-    
-    // Finde günstigsten Tarif für diesen Punkt
-    let guenstigsterTarif = tarife[0];
-    let guenstigsteKosten = berechneTarifkosten(guenstigsterTarif, testVerbrauch);
-    
-    tarife.forEach(tarif => {
-      const kosten = berechneTarifkosten(tarif, testVerbrauch);
-      if (kosten < guenstigsteKosten) {
-        guenstigsteKosten = kosten;
-        guenstigsterTarif = tarif;
+interface VerbrauchsRanking {
+  verbrauch: number;
+  rankings: TarifRanking[];
+}
+
+interface TarifOptimalitaet {
+  tarif: Stromtarif;
+  abVerbrauch: number | null; // null = nie optimal
+  bisVerbrauch: number | null; // null = bis unendlich optimal
+  istOptimal: boolean;
+  alternativen: string[]; // Welche Tarife sind besser
+}
+
+// Funktion zur Berechnung wann sich welcher Tarif lohnt
+const berechneTarifOptimalitaet = (tarife: Stromtarif[], maxVerbrauch: number): TarifOptimalitaet[] => {
+  const schrittweite = 50; // Feine Auflösung für genaue Berechnung
+  const optimalitatMappings: TarifOptimalitaet[] = [];
+
+  tarife.forEach(tarif => {
+    let ersterOptimalerVerbrauch: number | null = null;
+    let letzterOptimalerVerbrauch: number | null = null;
+    let istJemalsOptimal = false;
+
+    // Prüfe jeden Verbrauchspunkt
+    for (let verbrauch = 0; verbrauch <= maxVerbrauch; verbrauch += schrittweite) {
+      // Berechne Kosten für alle Tarife bei diesem Verbrauch
+      const kostenAktuell = berechneTarifkosten(tarif, verbrauch);
+      
+      // Prüfe ob dieser Tarif der günstigste ist
+      let istGuenstigster = true;
+      tarife.forEach(andereTarif => {
+        if (andereTarif.id !== tarif.id) {
+          const kostenAndere = berechneTarifkosten(andereTarif, verbrauch);
+          if (kostenAndere < kostenAktuell) {
+            istGuenstigster = false;
+          }
+        }
+      });
+
+      if (istGuenstigster && !istJemalsOptimal) {
+        ersterOptimalerVerbrauch = verbrauch;
+        istJemalsOptimal = true;
       }
+      
+      if (istGuenstigster) {
+        letzterOptimalerVerbrauch = verbrauch;
+      }
+    }
+
+    // Finde alternative Tarife für nicht-optimale Tarife
+    const alternativen: string[] = [];
+    if (!istJemalsOptimal) {
+      // Finde die besten Alternativen bei mittlerem Verbrauch
+      const mittlererVerbrauch = maxVerbrauch / 2;
+      const kostenAktuell = berechneTarifkosten(tarif, mittlererVerbrauch);
+      
+      const bessereAlternativen = tarife
+        .filter(andereTarif => andereTarif.id !== tarif.id)
+        .map(andereTarif => ({
+          tarif: andereTarif,
+          kosten: berechneTarifkosten(andereTarif, mittlererVerbrauch)
+        }))
+        .filter(alt => alt.kosten < kostenAktuell)
+        .sort((a, b) => a.kosten - b.kosten)
+        .slice(0, 3) // Top 3 Alternativen
+        .map(alt => alt.tarif.name);
+      
+      alternativen.push(...bessereAlternativen);
+    }
+
+    optimalitatMappings.push({
+      tarif,
+      abVerbrauch: ersterOptimalerVerbrauch,
+      bisVerbrauch: letzterOptimalerVerbrauch === maxVerbrauch ? null : letzterOptimalerVerbrauch,
+      istOptimal: istJemalsOptimal,
+      alternativen
     });
-    
-    const neuerTarifName = guenstigsterTarif.name;
-    
-    // Wenn sich der Tarif ändert, schließe den vorherigen Bereich ab
-    if (aktuellerTarif !== '' && aktuellerTarif !== neuerTarifName) {
-      bereiche.push({
-        tarifName: aktuellerTarif,
-        bereich: formatierBereich(bereichStart, vonVerbrauch, maxVerbrauch),
-        beschreibung: getBeschreibung(bereichStart, vonVerbrauch)
-      });
-      bereichStart = vonVerbrauch;
-    } else if (aktuellerTarif === '') {
-      bereichStart = vonVerbrauch;
-    }
-    
-    aktuellerTarif = neuerTarifName;
-    
-    // Letzter Bereich
-    if (i === einzigartigeVerbrauchspunkte.length - 2) {
-      bereiche.push({
-        tarifName: aktuellerTarif,
-        bereich: formatierBereich(bereichStart, bisVerbrauch, maxVerbrauch),
-        beschreibung: getBeschreibung(bereichStart, bisVerbrauch)
-      });
-    }
-  }
-  
-  return bereiche;
+  });
+
+  return optimalitatMappings;
 };
 
-// Hilfsfunktionen
-const formatierBereich = (von: number, bis: number, maxVerbrauch: number): string => {
-  if (von === 0) {
-    return `bis ${bis.toLocaleString()} kWh/Jahr`;
-  } else if (bis >= maxVerbrauch) {
-    return `ab ${von.toLocaleString()} kWh/Jahr`;
-  } else {
-    return `${von.toLocaleString()} - ${bis.toLocaleString()} kWh/Jahr`;
-  }
-};
+// Funktion zur Berechnung des Tarif-Rankings für verschiedene Verbrauchswerte
+const berechneTarifRanking = (tarife: Stromtarif[], testVerbraeuche: number[]): VerbrauchsRanking[] => {
+  return testVerbraeuche.map(verbrauch => {
+    // Berechne Kosten für alle Tarife bei diesem Verbrauch
+    const tarifeMitKosten = tarife.map(tarif => ({
+      tarif,
+      kosten: berechneTarifkosten(tarif, verbrauch)
+    }));
 
-const getBeschreibung = (von: number, bis: number): string => {
-  const mittlererVerbrauch = (von + bis) / 2;
-  if (mittlererVerbrauch < 2000) return "Niedrigverbraucher";
-  if (mittlererVerbrauch < 4500) return "Normalverbraucher";
-  return "Hochverbraucher";
+    // Sortiere nach Kosten (günstigster zuerst)
+    tarifeMitKosten.sort((a, b) => a.kosten - b.kosten);
+
+    // Erstelle Ranking mit Rang und Mehrkosten
+    const guenstigsteKosten = tarifeMitKosten[0].kosten;
+    const rankings: TarifRanking[] = tarifeMitKosten.map((item, index) => ({
+      tarif: item.tarif,
+      rang: index + 1,
+      kosten: item.kosten,
+      mehrkosten: item.kosten - guenstigsteKosten
+    }));
+
+    return {
+      verbrauch,
+      rankings
+    };
+  });
 };
 
 export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
@@ -183,7 +212,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
     }
   };
   // Berechne Schnittpunkte und Empfehlungen
-  const { verbrauchspunkte, schnittpunkte, empfehlungen } = useMemo(() => {
+  const { verbrauchspunkte } = useMemo(() => {
     if (tarife.length === 0) return { verbrauchspunkte: [], schnittpunkte: [], empfehlungen: [] };
 
     // Erstelle Verbrauchspunkte
@@ -273,7 +302,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
   // Erstelle Datasets nur für sichtbare Tarife
   const datasets = tarife
     .filter(tarif => sichtbareTarife.has(tarif.id))
-    .map((tarif, index) => {
+    .map((tarif) => {
       const originalIndex = tarife.indexOf(tarif);
       return {
         label: tarif.name,
@@ -517,80 +546,230 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
         </div>
       </div>
 
-      {/* Tarifempfehlungen */}
-      {empfehlungen.length > 0 && (
-        <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-2xl">🎯</span>
-            <h3 className="text-xl font-semibold text-slate-100">Tarifempfehlungen nach Verbrauch</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {empfehlungen.map((empfehlung, index) => (
-              <div 
-                key={index}
-                className="glass rounded-xl p-4 border border-slate-600/30 hover:border-slate-500/50 transition-all duration-300"
-                style={{ borderLeftColor: empfehlung.farbe, borderLeftWidth: '4px' }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: empfehlung.farbe }}
-                  ></div>
-                  <span className="text-slate-300 text-sm font-medium">
-                    {empfehlung.vonVerbrauch.toLocaleString()} - {empfehlung.bisVerbrauch.toLocaleString()} kWh/Jahr
-                  </span>
-                </div>
-                <h4 className="font-semibold text-slate-100 text-lg mb-1">
-                  {empfehlung.tarif.name}
-                </h4>
-                <p className="text-slate-300 text-sm mb-3">{empfehlung.tarif.name}</p>
-                <div className="text-xs text-slate-400 space-y-1">
-                  <div>⚡ {empfehlung.tarif.arbeitspreis.toFixed(4)} €/kWh</div>
-                  <div>💰 {empfehlung.tarif.grundpreis.toFixed(2)} €/Monat</div>
-                  {empfehlung.tarif.praemie > 0 && (
-                    <div>🎁 {empfehlung.tarif.praemie.toFixed(2)} € Prämie</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Optimaler Verbrauchsbereich pro Tarif */}
-      {schnittpunkte.length > 0 && (
+      {/* Tarif-Optimalität Übersicht */}
+      {tarife.length > 1 && (
         <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-6">
             <span className="text-2xl">🎯</span>
             <h3 className="text-xl font-semibold text-slate-100">Wann lohnt sich welcher Tarif?</h3>
           </div>
-          <div className="space-y-3">
-            {berechneOptimaleBereiche(tarife, schnittpunkte, maxVerbrauch).map((bereich, index) => (
-              <div 
-                key={index}
-                className="glass rounded-lg p-4 border border-slate-600/30 hover:bg-slate-700/30 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: FARBEN[index % FARBEN.length] }}
-                    ></div>
-                    <span className="text-slate-100 font-medium text-lg">
-                      {bereich.tarifName}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-slate-200 font-semibold">
-                      {bereich.bereich}
+          
+          {(() => {
+            const optimalitatDaten = berechneTarifOptimalitaet(tarife, maxVerbrauch);
+            
+            return (
+              <div className="space-y-4">
+                {optimalitatDaten.map((daten, index) => (
+                  <div 
+                    key={daten.tarif.id}
+                    className={`
+                      p-4 rounded-xl border transition-all duration-300
+                      ${daten.istOptimal 
+                        ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:bg-green-500/20' 
+                        : 'bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/30 hover:bg-red-500/20'
+                      }
+                    `}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: FARBEN[index % FARBEN.length] }}
+                        ></div>
+                        <div>
+                          <h4 className="font-semibold text-slate-100 text-lg">
+                            {daten.tarif.name}
+                          </h4>
+                          {daten.istOptimal ? (
+                            <div className="mt-1">
+                              <span className="text-green-300 font-medium">
+                                ✅ Lohnt sich von{' '}
+                                {daten.abVerbrauch?.toLocaleString() || '0'} kWh
+                                {daten.bisVerbrauch 
+                                  ? ` bis ${daten.bisVerbrauch.toLocaleString()} kWh` 
+                                  : ' bis unendlich'
+                                }
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="mt-1">
+                              <span className="text-red-300 font-medium">
+                                ❌ Lohnt sich nie bei diesem Verbrauchsbereich
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        {daten.istOptimal ? (
+                          <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-medium">
+                            🏆 Optimal
+                          </div>
+                        ) : (
+                          <div className="bg-red-500/20 text-red-300 px-3 py-1 rounded-full text-sm font-medium">
+                            ⚠️ Nicht optimal
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-slate-400 text-sm">
-                      {bereich.beschreibung}
+                    
+                    {!daten.istOptimal && daten.alternativen.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-600/30">
+                        <p className="text-slate-400 text-sm mb-2">
+                          🔄 Bessere Alternativen:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {daten.alternativen.map((alternative, altIndex) => (
+                            <span 
+                              key={altIndex}
+                              className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-sm"
+                            >
+                              {alternative}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="mt-3 pt-3 border-t border-slate-600/30">
+                      <div className="grid grid-cols-3 gap-4 text-xs text-slate-400">
+                        <div>
+                          <span className="text-blue-400">⚡</span> {daten.tarif.arbeitspreis.toFixed(4)} €/kWh
+                        </div>
+                        <div>
+                          <span className="text-green-400">💰</span> {daten.tarif.grundpreis.toFixed(2)} €/Monat
+                        </div>
+                        {daten.tarif.praemie > 0 && (
+                          <div>
+                            <span className="text-purple-400">🎁</span> {daten.tarif.praemie.toFixed(2)} € Prämie
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            );
+          })()}
+          
+          <div className="mt-4 text-xs text-slate-500 flex items-center gap-2">
+            <span>💡</span>
+            <span>
+              Diese Übersicht zeigt den optimalen Verbrauchsbereich für jeden Tarif. 
+              Tarife die sich nie lohnen bekommen bessere Alternativen vorgeschlagen.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Tarif-Ranking für verschiedene Verbrauchswerte */}
+      {tarife.length > 1 && (
+        <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-2xl">�</span>
+            <h3 className="text-xl font-semibold text-slate-100">Tarif-Ranking nach Verbrauch</h3>
+          </div>
+          
+          {(() => {
+            // Berechne Rankings basierend auf dem maxVerbrauch aus dem Chart
+            const schritte = 5; // Anzahl der Verbrauchsstufen
+            const testVerbraeuche: number[] = [];
+            
+            // Erstelle gleichmäßig verteilte Verbrauchswerte basierend auf maxVerbrauch
+            for (let i = 1; i <= schritte; i++) {
+              const verbrauch = Math.round((maxVerbrauch / schritte) * i);
+              testVerbraeuche.push(verbrauch);
+            }
+            
+            const rankings = berechneTarifRanking(tarife, testVerbraeuche);
+            
+            return (
+              <div className="space-y-6">
+                {rankings.map((verbrauchsRanking, index) => (
+                  <div key={index} className="border border-slate-600/30 rounded-xl p-4">
+                    <h4 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                      <span className="text-blue-400">📊</span>
+                      Bei {verbrauchsRanking.verbrauch.toLocaleString()} kWh/Jahr
+                    </h4>
+                    
+                    <div className="space-y-2">
+                      {verbrauchsRanking.rankings.map((ranking, rankIndex) => (
+                        <div 
+                          key={ranking.tarif.id}
+                          className={`
+                            flex items-center justify-between p-3 rounded-lg transition-all duration-300
+                            ${ranking.rang === 1 
+                              ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30' 
+                              : ranking.rang === 2
+                              ? 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20'
+                              : ranking.rang === 3
+                              ? 'bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20'
+                              : 'bg-slate-700/30 border border-slate-600/20'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`
+                              w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                              ${ranking.rang === 1 ? 'bg-green-500 text-white' :
+                                ranking.rang === 2 ? 'bg-blue-500 text-white' :
+                                ranking.rang === 3 ? 'bg-orange-500 text-white' :
+                                'bg-slate-600 text-slate-300'
+                              }
+                            `}>
+                              {ranking.rang === 1 ? '🥇' : 
+                               ranking.rang === 2 ? '🥈' :
+                               ranking.rang === 3 ? '🥉' :
+                               ranking.rang}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: FARBEN[rankIndex % FARBEN.length] }}
+                              ></div>
+                              <span className={`font-medium ${
+                                ranking.rang === 1 ? 'text-green-200' :
+                                ranking.rang <= 3 ? 'text-slate-100' : 'text-slate-300'
+                              }`}>
+                                {ranking.tarif.name}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className={`font-semibold ${
+                              ranking.rang === 1 ? 'text-green-200' : 'text-slate-200'
+                            }`}>
+                              {ranking.kosten.toFixed(2)} €/Jahr
+                            </div>
+                            {ranking.mehrkosten > 0 && (
+                              <div className="text-red-400 text-sm">
+                                +{ranking.mehrkosten.toFixed(2)} € teurer
+                              </div>
+                            )}
+                            {ranking.rang === 1 && (
+                              <div className="text-green-400 text-sm font-medium">
+                                Günstigster! 🎯
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+          
+          <div className="mt-4 text-xs text-slate-500 flex items-center gap-2">
+            <span>💡</span>
+            <span>
+              Das Ranking zeigt alle Tarife sortiert nach Kosten für verschiedene Jahresverbräuche. 
+              🥇 = Günstigster, 🥈 = Zweitbester, 🥉 = Drittbester
+            </span>
           </div>
         </div>
       )}

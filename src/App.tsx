@@ -11,7 +11,7 @@ import './App.css';
 
 function App() {
   const { user, isAuthenticated, isLoading, login, register, logout, deleteAccount } = useAuth();
-  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen, alleTarifeLoeschen } = useStromtarife(user?.id);
+  const { tarife, tarifHinzufuegen, tarifAktualisieren, tarifLoeschen } = useStromtarife(user?.id);
   const [activeTab, setActiveTab] = useState<'eingabe' | 'liste' | 'vergleich' | 'profil'>('eingabe');
   const [beispielVerbrauch, setBeispielVerbrauch] = useState(3500);
   const [bearbeitungsTarif, setBearbeitungsTarif] = useState<Stromtarif | null>(null);
@@ -125,7 +125,6 @@ function App() {
               <TarifListe 
                 tarife={tarife} 
                 onTarifLoeschen={tarifLoeschen} 
-                onAlleTarifeLoeschen={alleTarifeLoeschen}
                 onTarifBearbeiten={handleTarifBearbeiten}
                 beispielVerbrauch={beispielVerbrauch}
                 onVerbrauchChange={setBeispielVerbrauch}
