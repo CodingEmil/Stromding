@@ -14,21 +14,47 @@ const USERS_STORAGE_KEY = 'stromtarif_users';
 const CURRENT_USER_KEY = 'stromtarif_current_user';
 const USER_DATA_PREFIX = 'stromtarif_user_data_';
 
+// Safe localStorage wrapper für GitHub Pages
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.warn('LocalStorage nicht verfügbar:', error);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.warn('LocalStorage nicht verfügbar:', error);
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.warn('LocalStorage nicht verfügbar:', error);
+    }
+  }
+};
+
 export class AuthService {
   // Alle Benutzer aus localStorage laden
   private getStoredUsers(): StoredUser[] {
-    const users = localStorage.getItem(USERS_STORAGE_KEY);
+    const users = safeLocalStorage.getItem(USERS_STORAGE_KEY);
     return users ? JSON.parse(users) : [];
   }
 
   // Benutzer in localStorage speichern
   private saveUsers(users: StoredUser[]): void {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    safeLocalStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   }
 
   // Benutzerdaten für einen spezifischen Benutzer laden
   getUserData(userId: string): UserData {
-    const data = localStorage.getItem(USER_DATA_PREFIX + userId);
+    const data = safeLocalStorage.getItem(USER_DATA_PREFIX + userId);
     return data ? JSON.parse(data) : {
       tarife: [],
       settings: {
@@ -40,7 +66,7 @@ export class AuthService {
 
   // Benutzerdaten für einen spezifischen Benutzer speichern
   saveUserData(userId: string, data: UserData): void {
-    localStorage.setItem(USER_DATA_PREFIX + userId, JSON.stringify(data));
+    safeLocalStorage.setItem(USER_DATA_PREFIX + userId, JSON.stringify(data));
   }
 
   // Benutzer registrieren
@@ -107,20 +133,20 @@ export class AuthService {
     };
 
     // Aktuellen Benutzer speichern
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    safeLocalStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
 
     return user;
   }
 
   // Aktuell angemeldeten Benutzer laden
   getCurrentUser(): User | null {
-    const user = localStorage.getItem(CURRENT_USER_KEY);
+    const user = safeLocalStorage.getItem(CURRENT_USER_KEY);
     return user ? JSON.parse(user) : null;
   }
 
   // Benutzer abmelden
   logout(): void {
-    localStorage.removeItem(CURRENT_USER_KEY);
+    safeLocalStorage.removeItem(CURRENT_USER_KEY);
   }
 
   // Benutzer löschen (mit allen Daten)
@@ -130,7 +156,7 @@ export class AuthService {
     this.saveUsers(filteredUsers);
     
     // Benutzerdaten löschen
-    localStorage.removeItem(USER_DATA_PREFIX + userId);
+    safeLocalStorage.removeItem(USER_DATA_PREFIX + userId);
     
     // Falls der gelöschte Benutzer aktuell angemeldet ist, abmelden
     const currentUser = this.getCurrentUser();
