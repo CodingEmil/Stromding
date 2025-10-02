@@ -22,8 +22,7 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="relative inline-block mb-4">
-            <span className="text-6xl animate-pulse-glow">⚡</span>
-            <div className="absolute inset-0 text-6xl animate-pulse-glow opacity-30 blur-sm">⚡</div>
+            <span className="text-6xl">⚡</span>
           </div>
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
         </div>
@@ -67,15 +66,9 @@ function App() {
           <div className="flex items-center justify-between h-20 animate-fadeInUp">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <span className="text-5xl animate-pulse-glow">⚡</span>
-                <div className="absolute inset-0 text-5xl animate-pulse-glow opacity-50 blur-sm">⚡</div>
+                <span className="text-5xl">⚡</span>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-600 bg-clip-text text-transparent">
-                  StromTarif Vergleich
-                </h1>
-                <p className="text-slate-400 text-sm">Finden Sie den günstigsten Stromtarif für Ihren Verbrauch</p>
-              </div>
+
             </div>
 
             {/* Tab Navigation */}
@@ -94,7 +87,6 @@ function App() {
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl group-hover:animate-bounce">{tab.icon}</span>
-                    <span className="hidden sm:inline">{tab.label}</span>
                   </div>
                   {activeTab === tab.id && (
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>

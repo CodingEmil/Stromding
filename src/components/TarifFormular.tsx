@@ -110,8 +110,7 @@ export const TarifFormular = ({
     <div className="glass rounded-2xl p-8 border border-slate-700/50 animate-fadeInUp backdrop-blur-xl">
       <div className="flex items-center gap-4 mb-8">
         <div className="relative">
-          <span className="text-4xl animate-pulse-glow">⚡</span>
-          <div className="absolute inset-0 text-4xl animate-pulse-glow opacity-30 blur-sm">⚡</div>
+          <span className="text-4xl">⚡</span>
         </div>
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">

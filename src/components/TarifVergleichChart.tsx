@@ -142,7 +142,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
   if (tarife.length === 0) {
     return (
       <div className="glass rounded-2xl p-12 text-center border border-slate-700/50 animate-fadeInUp backdrop-blur-xl">
-        <div className="text-6xl mb-4 animate-pulse-glow">📈</div>
+        <div className="text-6xl mb-4">📈</div>
         <h3 className="text-2xl font-semibold text-slate-200 mb-2">Keine Tarife zum Vergleichen</h3>
         <p className="text-slate-400 text-lg">
           Fügen Sie Stromtarife hinzu, um einen detaillierten Vergleich zu sehen.
@@ -285,7 +285,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
       {/* Skalierung Controls */}
       <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl animate-pulse-glow">⚙️</span>
+          <span className="text-2xl">⚙️</span>
           <h3 className="text-xl font-semibold text-slate-100">Diagramm-Einstellungen</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -332,7 +332,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
       {empfehlungen.length > 0 && (
         <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-2xl animate-pulse-glow">🎯</span>
+            <span className="text-2xl">🎯</span>
             <h3 className="text-xl font-semibold text-slate-100">Tarifempfehlungen nach Verbrauch</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -372,7 +372,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
       {schnittpunkte.length > 0 && (
         <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-2xl animate-pulse-glow">📊</span>
+            <span className="text-2xl">📊</span>
             <h3 className="text-xl font-semibold text-slate-100">Tarifwechsel-Punkte</h3>
             <span className="text-sm text-slate-400">
               (Verbrauchspunkte, bei denen sich die Kostenverhältnisse ändern)
@@ -410,7 +410,7 @@ export const TarifVergleichChart: React.FC<TarifVergleichChartProps> = ({
       {/* Tarif-Übersicht */}
       <div className="glass rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
         <div className="flex items-center gap-3 mb-6">
-          <span className="text-2xl animate-pulse-glow">📋</span>
+          <span className="text-2xl">📋</span>
           <h3 className="text-xl font-semibold text-slate-100">Tarif-Übersicht</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

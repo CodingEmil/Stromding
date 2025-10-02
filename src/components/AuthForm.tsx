@@ -85,8 +85,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onLogin, onRegister }) => {
       <div className="glass rounded-2xl p-8 border border-slate-700/50 backdrop-blur-xl w-full max-w-md relative z-10 animate-fadeInUp">
         <div className="text-center mb-8">
           <div className="relative inline-block mb-4">
-            <span className="text-6xl animate-pulse-glow">⚡</span>
-            <div className="absolute inset-0 text-6xl animate-pulse-glow opacity-30 blur-sm">⚡</div>
+            <span className="text-6xl">⚡</span>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
             StromTarif Vergleich
